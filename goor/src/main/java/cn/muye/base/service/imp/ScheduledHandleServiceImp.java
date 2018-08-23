@@ -152,9 +152,11 @@ public class ScheduledHandleServiceImp implements ScheduledHandleService, Applic
             if (success) {
                 logger.info("ros连接成功，清除心跳时间锚点");
                 CacheInfoManager.setTopicHeartCheckCache();
+            } else {
+                logger.info("ros连接失败，清除心跳时间锚点");
+                CacheInfoManager.setTopicHeartCheckCache();
             }
         }
-        //                topic.subscribe(new CheckHeartSubListenerImpl());
     }
 
     /**
