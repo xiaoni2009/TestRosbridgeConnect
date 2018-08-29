@@ -22,6 +22,13 @@ public class Constant {
     public static final int POINT_X_Y_TH_SCALE = 4;
 
     /**
+     * 测试网络连接的日志名称
+     */
+    public static final String NET_CLOUD_SERVER = "checkCloudServer";
+    public static final String NET_ROS_BRIDGE = "checkRosBridge";
+    public static final String NET_TTL = "ttl";
+
+    /**
      * 是否需要对特殊点别名进行重命名
      */
     public static final boolean NEED_SPECIAL_POINT_ALIAS = true;

@@ -15,6 +15,7 @@ public class ScheduledHandle {
     public ScheduledHandle(ScheduledExecutorService scheduledExecutor, String queueName) {
         this.scheduledExecutor = scheduledExecutor;
         this.rosHealthCheckScheduled();
+        this.testPing();
     }
 
     /**
@@ -34,5 +35,23 @@ public class ScheduledHandle {
                 }
             }
         }, 25, 5, TimeUnit.SECONDS);
+    }
+
+
+    /**
+     * testPing
+     */
+    public void testPing() {
+        scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    logger.info("schedule testPing start");
+                    new ScheduledHandleServiceImp().testPing();
+                } catch (Exception e) {
+                    logger.error("schedule publishRosScheduled exception", e);
+                }
+            }
+        }, 34, 1, TimeUnit.SECONDS);
     }
 }

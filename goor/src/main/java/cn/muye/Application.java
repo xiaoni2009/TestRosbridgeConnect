@@ -125,6 +125,12 @@ public class Application {
 		return scheduledExecutor;
 	}
 
+	@Bean
+	public RestTemplate restTemplate(RestTemplateBuilder builder) {
+		// Do any additional configuration here
+		return builder.build();
+	}
+
 	/**
 	 * Start
 	 */

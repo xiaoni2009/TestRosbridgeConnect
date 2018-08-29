@@ -5,6 +5,7 @@ import cn.muye.base.service.imp.ScheduledHandleServiceImp;
 import cn.muye.version.bean.MyRos;
 import cn.muye.version.service.GetService;
 import cn.muye.version.service.SetService;
+import cn.muye.version.util.RosConnectUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,7 +36,7 @@ public class RosConfig {
         MyRos ros = new MyRos(rosPath);
         try {
             ros.addRosHandler(new RosHandlerImp(ros, new Date().toString()));
-            ScheduledHandleServiceImp.connectRosOnlyOneClient(ros);
+            RosConnectUtil.connectRosOnlyOneClient(ros);
         } catch (Exception e) {
             log.error("rosConfig get x86_mission_dispatch error", e);
         }

@@ -1,5 +1,7 @@
 package cn.muye.base.service.imp;
 
+import cn.mrobot.bean.AjaxResult;
+import cn.mrobot.bean.constant.Constant;
 import cn.mrobot.bean.constant.TopicConstants;
 import cn.muye.base.bean.HeartCheck;
 import cn.muye.base.bean.RosHandlerImp;
@@ -8,6 +10,8 @@ import cn.muye.base.cache.CacheInfoManager;
 import cn.muye.base.service.ScheduledHandleService;
 import cn.muye.version.bean.MyRos;
 import cn.muye.version.bean.MyTopic;
+import cn.muye.version.util.PingUtil;
+import cn.muye.version.util.RosConnectUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import edu.wpi.rail.jrosbridge.messages.Message;
@@ -90,7 +94,7 @@ public class ScheduledHandleServiceImp implements ScheduledHandleService, Applic
             logger.info("心跳时间差：" + (System.currentTimeMillis() - CacheInfoManager.getTopicHeartCheckCache()));
 //            logger.info("rosHealthCheck heartTime=" + CacheInfoManager.getTopicHeartCheckCache());
             if ((System.currentTimeMillis() - CacheInfoManager.getTopicHeartCheckCache()) > TopicConstants.CHECK_HEART_TOPIC_MAX) {
-                connectRosOnlyOneClient(ros);
+                RosConnectUtil.connectRosOnlyOneClient(ros);
             }
         } catch (Exception e) {
             logger.error("-->> Scheduled rosHealthCheck Exception", e);
@@ -109,88 +113,20 @@ public class ScheduledHandleServiceImp implements ScheduledHandleService, Applic
         topic.publish(new Message(JSON.toJSONString(messageObject)));
     }
 
-    private final static Long RECONNECT_SLEEP_TIME = 5000L;
-    /**
-     * 只产生一个client的连接ros方式
-     * @param ros
-     * @throws Exception
-     */
-    public static void connectRosOnlyOneClient(MyRos ros) throws Exception{
-        if(ros.isConnected()) {
-            logger.info("ros已连接，开始断开旧连接");
-            //解注册旧连接的topic和service
-            TopicHandleInfo.clearTopicService(ros);
-            if(ros.disconnect()) {
-                Thread.sleep(RECONNECT_SLEEP_TIME);
-                logger.info("ros旧连接断连成功，已等待" + RECONNECT_SLEEP_TIME + "豪秒，开始重新连接");
-                //断连成功，再重连
-                connectRos(ros);
-            }
-            else {
-                logger.info("ros旧连接断连失败，等待下次心跳超时处理，重新注册发布topic和service");
-                //重新注册发布topic和service，因为上面解注册了
-                TopicHandleInfo.reSubScribeAdvertiseTopicService(ros);
-            }
-        }
-        //ros未连接则连接
-        else {
-            logger.info("ros未连接，开始连接");
-            connectRos(ros);
-        }
-    }
-
-    /**
-     * 连接ros，并注册、发布topic.可能会产生多个client。
-     * @throws Exception
-     * @param ros
-     */
-    public static void connectRos(MyRos ros) throws Exception{
-        if (isHostAvailable(new URI(ros.getURL()))) {
-            logger.info("开始ros心跳连接->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            ros.addRosHandler(new RosHandlerImp(ros, new Date().toString()));
-            boolean success = ros.connect();
-            if (success) {
-                logger.info("ros连接成功，清除心跳时间锚点");
-                CacheInfoManager.setTopicHeartCheckCache();
-            } else {
-                logger.info("ros连接失败，清除心跳时间锚点");
-                CacheInfoManager.setTopicHeartCheckCache();
-            }
-        }
-    }
-
-    /**
-     * 判断websocket连接是否可用
-     * @param uri
-     * @return
-     */
-    private static boolean isHostAvailable(URI uri) {
-        logger.info("[checkRosbridge]isHostAvailable start");
-        if (uri == null) {
-            return false;
-        }
-        Socket socket = new Socket();
-        InetSocketAddress inetSocketAddress = new InetSocketAddress(uri.getHost(),
-                uri.getPort());
-        try {
-            socket.connect(inetSocketAddress);
-            logger.info("[checkRosbridge]connect successful, address = " + inetSocketAddress);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.info("[checkRosbridge]connect failed, address = " + inetSocketAddress + ", exception =  " + e);
-            return false;
-        } finally {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         ScheduledHandleServiceImp.applicationContext = applicationContext;
+    }
+
+    @Override
+    public void testPing() throws Exception{
+        restTemplate = applicationContext.getBean(RestTemplate.class);
+        //向服务器申请未处理的消息
+        String REMOTE_URL = PREFIX + serverIp + "/services/getUnDealMessages";
+        AjaxResult response = PingUtil.connectAndCheckFirstUseGet(restTemplate,
+                PREFIX + serverIp,
+                Constant.NET_CLOUD_SERVER,
+                REMOTE_URL + "?robotCode=Noah_008",
+                AjaxResult.class);
     }
 }
